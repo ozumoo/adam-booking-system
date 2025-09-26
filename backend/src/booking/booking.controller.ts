@@ -20,8 +20,8 @@ export class BookingController {
     this.logger.log(`Booking creation attempt`, {
       context: 'BookingController.create',
       customerUserId: req.user.id,
-      painterId: createBookingDto.painterId,
-      bookingDate: createBookingDto.bookingDate,
+      painterUserId: createBookingDto.painterUserId,
+      date: createBookingDto.date,
     });
 
     // Set the customerUserId from the authenticated user
