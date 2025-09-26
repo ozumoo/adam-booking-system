@@ -7,6 +7,10 @@ import { CustomerModule } from './customer/customer.module';
 import { PainterModule } from './painter/painter.module';
 import { AvailabilityModule } from './availability/availability.module';
 import { BookingModule } from './booking/booking.module';
+import { BookingRequestModule } from './booking-request/booking-request.module';
+import { SeederModule } from './seeders/seeder.module';
+import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -33,6 +37,10 @@ import { BookingModule } from './booking/booking.module';
     PainterModule,
     AvailabilityModule,
     BookingModule,
+    BookingRequestModule,
+    SeederModule,
+    UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
