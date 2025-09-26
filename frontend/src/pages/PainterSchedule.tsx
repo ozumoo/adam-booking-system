@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { painterApi, bookingApi, Booking } from '../services/api';
+import { painterApi, bookingApi } from '../services/api';
+import type { Booking } from '../services/api';
 
 export default function PainterSchedule() {
   const [painters, setPainters] = useState<any[]>([]);

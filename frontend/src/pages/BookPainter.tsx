@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { painterApi, customerApi, bookingApi, Painter, Customer, Booking } from '../services/api';
+import { painterApi, customerApi, bookingApi } from '../services/api';
+import type { Painter, Customer } from '../services/api';
 
 export default function BookPainter() {
   const [painters, setPainters] = useState<Painter[]>([]);
@@ -13,7 +14,10 @@ export default function BookPainter() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [step, setStep] = useState(1); // 1: Select painter, 2: Select customer, 3: Book time
+  const [step, setStep] = useState(1); // 1: Select painter, 2: Select customer, 3: Book time, 4: Success
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [successBooking, setSuccessBooking] = useState<any>(null);
 
   useEffect(() => {
     loadPainters();
@@ -64,7 +68,7 @@ export default function BookPainter() {
     setMessage('');
 
     try {
-      await bookingApi.create({
+      const result = await bookingApi.createWithRecommendations({
         painterId: selectedPainter.id,
         customerId: selectedCustomer.id,
         date: booking.date,
@@ -73,13 +77,21 @@ export default function BookPainter() {
         status: 'pending'
       });
       
-      setMessage('Booking created successfully!');
-      setSelectedPainter(null);
-      setSelectedCustomer(null);
-      setBooking({ date: '', startTime: '', endTime: '' });
-      setStep(1);
-    } catch (error) {
-      setMessage('Error creating booking. Please try again.');
+      if (result.data.success) {
+        setSuccessBooking(result.data.booking);
+        setStep(4); // Go to success page
+        setShowRecommendations(false);
+        setRecommendations([]);
+        setMessage('');
+      } else {
+        setMessage(result.data.error);
+        setRecommendations(result.data.recommendations || []);
+        setShowRecommendations(true);
+      }
+    } catch (error: any) {
+      // Extract error message from API response
+      const errorMessage = error.response?.data?.message || 'Error creating booking. Please try again.';
+      setMessage(errorMessage);
       console.error('Error:', error);
     } finally {
       setLoading(false);
@@ -91,6 +103,41 @@ export default function BookPainter() {
     setSelectedCustomer(null);
     setBooking({ date: '', startTime: '', endTime: '' });
     setStep(1);
+    setShowRecommendations(false);
+    setRecommendations([]);
+    setSuccessBooking(null);
+    setMessage('');
+  };
+
+  const selectRecommendation = async (recommendation: any) => {
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const result = await bookingApi.createWithRecommendations({
+        painterId: recommendation.painterId,
+        customerId: selectedCustomer!.id,
+        date: recommendation.date,
+        startTime: recommendation.startTime,
+        endTime: recommendation.endTime,
+        status: 'pending'
+      });
+      
+      if (result.data.success) {
+        setSuccessBooking(result.data.booking);
+        setStep(4); // Go to success page
+        setShowRecommendations(false);
+        setRecommendations([]);
+        setMessage('');
+      } else {
+        setMessage('Failed to book recommended slot. Please try again.');
+      }
+    } catch (error: any) {
+      setMessage('Error booking recommended slot. Please try again.');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -265,6 +312,118 @@ export default function BookPainter() {
               {loading ? 'Creating Booking...' : 'Create Booking'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Step 4: Success */}
+      {step === 4 && successBooking && (
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
+            <p className="text-lg text-gray-600 mb-6">
+              Your booking has been successfully created.
+            </p>
+            
+            <div className="bg-gray-50 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Booking Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <div>
+                  <p className="text-sm text-gray-600">Booking ID</p>
+                  <p className="font-medium text-gray-900">#{successBooking.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Status</p>
+                  <p className="font-medium text-gray-900 capitalize">{successBooking.status}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Date</p>
+                  <p className="font-medium text-gray-900">
+                    {new Date(successBooking.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Time</p>
+                  <p className="font-medium text-gray-900">
+                    {successBooking.startTime} - {successBooking.endTime}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={resetSelection}
+                className="bg-blue-600 text-white py-2 px-6 rounded-md text-sm font-medium hover:bg-blue-700"
+              >
+                Book Another Service
+              </button>
+              <button
+                onClick={() => window.location.href = '/'}
+                className="bg-gray-200 text-gray-800 py-2 px-6 rounded-md text-sm font-medium hover:bg-gray-300"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {showRecommendations && recommendations.length > 0 && (
+        <div className="bg-white shadow rounded-lg p-6 mt-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Alternative Time Slots Available</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            The requested time slot is not available. Here are some alternative options:
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {recommendations.map((rec, index) => (
+              <div
+                key={index}
+                className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors"
+                onClick={() => selectRecommendation(rec)}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-medium text-gray-900">{rec.painterName}</h3>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    {rec.dayOfWeek}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">
+                  {new Date(rec.date).toLocaleDateString()} at {rec.startTime} - {rec.endTime}
+                </p>
+                <p className="text-xs text-gray-500 mb-2">{rec.reason}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">
+                    {rec.timeDifference === 0 ? 'Exact time' : `${rec.timeDifference} min difference`}
+                  </span>
+                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    Book This Slot
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-4 flex justify-between">
+            <button
+              onClick={() => setShowRecommendations(false)}
+              className="text-gray-600 hover:text-gray-800 text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={resetSelection}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              Try Different Time
+            </button>
+          </div>
         </div>
       )}
     </div>

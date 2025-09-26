@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { painterApi, availabilityApi, Painter, Availability } from '../services/api';
+import { painterApi, availabilityApi } from '../services/api';
+import type { Availability } from '../services/api';
+
+type AvailabilityFormData = Omit<Availability, 'id' | 'createdAt' | 'updatedAt'>;
 
 const DAYS_OF_WEEK = [
   'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
@@ -11,7 +14,7 @@ export default function RegisterPainter() {
     rating: 0,
     specialization: '',
   });
-  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  const [availabilities, setAvailabilities] = useState<AvailabilityFormData[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 

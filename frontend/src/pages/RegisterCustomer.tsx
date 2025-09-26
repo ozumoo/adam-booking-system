@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { customerApi, Customer } from '../services/api';
+import { customerApi } from '../services/api';
 
 export default function RegisterCustomer() {
   const [customer, setCustomer] = useState({
