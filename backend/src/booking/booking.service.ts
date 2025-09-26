@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { BookingRepository } from './booking.repository';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { Booking, BookingStatus } from './booking.entity';
@@ -8,6 +8,8 @@ import { AvailabilityService } from '../availability/availability.service';
 
 @Injectable()
 export class BookingService {
+  private readonly logger = new Logger(BookingService.name);
+
   constructor(
     private readonly bookingRepository: BookingRepository,
     private readonly customerService: CustomerService,
@@ -16,11 +18,21 @@ export class BookingService {
   ) {}
 
   async create(createBookingDto: CreateBookingDto): Promise<Booking> {
-    // Verify customer and painter users exist
-    if (createBookingDto.customerUserId) {
-      await this.customerService.findByUserId(createBookingDto.customerUserId);
-    }
-    await this.painterService.findByUserId(createBookingDto.painterUserId);
+    this.logger.log(`Booking creation started`, {
+      context: 'BookingService.create',
+      customerUserId: createBookingDto.customerUserId,
+      painterUserId: createBookingDto.painterUserId,
+      date: createBookingDto.date,
+      startTime: createBookingDto.startTime,
+      endTime: createBookingDto.endTime,
+    });
+
+    try {
+      // Verify customer and painter users exist
+      if (createBookingDto.customerUserId) {
+        await this.customerService.findByUserId(createBookingDto.customerUserId);
+      }
+      await this.painterService.findByUserId(createBookingDto.painterUserId);
 
     const bookingDate = new Date(createBookingDto.date);
     
@@ -56,11 +68,34 @@ export class BookingService {
       throw new ConflictException('Painter is already booked for this time slot');
     }
 
-    const bookingData = {
-      ...createBookingDto,
-      date: new Date(createBookingDto.date)
-    };
-    return this.bookingRepository.create(bookingData);
+      const bookingData = {
+        ...createBookingDto,
+        date: new Date(createBookingDto.date)
+      };
+      
+      const booking = await this.bookingRepository.create(bookingData);
+      
+      this.logger.log(`Booking created successfully`, {
+        context: 'BookingService.create',
+        bookingId: booking.id,
+        customerUserId: booking.customerUserId,
+        painterUserId: booking.painterUserId,
+        date: booking.date,
+        status: booking.status,
+      });
+
+      return booking;
+    } catch (error) {
+      this.logger.error(`Booking creation failed`, {
+        context: 'BookingService.create',
+        customerUserId: createBookingDto.customerUserId,
+        painterUserId: createBookingDto.painterUserId,
+        date: createBookingDto.date,
+        error: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
   }
 
   async findAll(): Promise<Booking[]> {
@@ -84,9 +119,38 @@ export class BookingService {
   }
 
   async updateStatus(id: number, status: BookingStatus): Promise<Booking> {
-    const booking = await this.findOne(id);
-    booking.status = status;
-    return this.bookingRepository.save(booking);
+    this.logger.log(`Booking status update started`, {
+      context: 'BookingService.updateStatus',
+      bookingId: id,
+      newStatus: status,
+    });
+
+    try {
+      const booking = await this.findOne(id);
+      const oldStatus = booking.status;
+      booking.status = status;
+      const updatedBooking = await this.bookingRepository.save(booking);
+
+      this.logger.log(`Booking status updated successfully`, {
+        context: 'BookingService.updateStatus',
+        bookingId: id,
+        oldStatus,
+        newStatus: status,
+        customerUserId: booking.customerUserId,
+        painterUserId: booking.painterUserId,
+      });
+
+      return updatedBooking;
+    } catch (error) {
+      this.logger.error(`Booking status update failed`, {
+        context: 'BookingService.updateStatus',
+        bookingId: id,
+        newStatus: status,
+        error: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
   }
 
   async remove(id: number): Promise<void> {

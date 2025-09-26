@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { WinstonModule } from 'nest-winston';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CustomerModule } from './customer/customer.module';
@@ -11,6 +12,7 @@ import { BookingRequestModule } from './booking-request/booking-request.module';
 import { SeederModule } from './seeders/seeder.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { loggerConfig } from './config/logger.config';
 
 @Module({
   imports: [
@@ -18,6 +20,7 @@ import { AuthModule } from './auth/auth.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    WinstonModule.forRoot(loggerConfig),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
