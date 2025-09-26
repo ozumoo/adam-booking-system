@@ -100,6 +100,29 @@ export const bookingApi = {
     api.get<Booking[]>(`/bookings/customer/${customerId}`),
   create: (data: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>) => 
     api.post<Booking>('/bookings', data),
+  createWithRecommendations: (data: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>) => 
+    api.post<any>('/bookings/with-recommendations', data),
+  createWithPrioritization: (data: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>, criteria?: any) => 
+    api.post<any>('/bookings/with-prioritization', { ...data, criteria }),
+  getPrioritization: (date: string, startTime: string, endTime: string, criteria?: any) => {
+    const queryParams = new URLSearchParams();
+    queryParams.append('date', date);
+    queryParams.append('startTime', startTime);
+    queryParams.append('endTime', endTime);
+    
+    if (criteria) {
+      if (criteria.urgency) queryParams.append('urgency', criteria.urgency);
+      if (criteria.jobType) queryParams.append('jobType', criteria.jobType);
+      if (criteria.location) queryParams.append('location', criteria.location);
+      if (criteria.preferredSkills && criteria.preferredSkills.length > 0) {
+        criteria.preferredSkills.forEach((skill: string) => {
+          queryParams.append('preferredSkills', skill);
+        });
+      }
+    }
+    
+    return api.get<any>(`/bookings/smart-painters?${queryParams.toString()}`);
+  },
   updateStatus: (id: number, status: Booking['status']) => 
     api.patch<Booking>(`/bookings/${id}/status`, { status }),
   delete: (id: number) => api.delete(`/bookings/${id}`),

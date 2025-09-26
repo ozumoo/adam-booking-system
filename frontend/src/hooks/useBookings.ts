@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { bookingApi, Booking } from '../services/api';
+import { bookingApi } from '../services/api';
+import type { Booking } from '../services/api';
 
 export const useBookings = (painterId?: number, customerId?: number) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -33,8 +34,9 @@ export const useBookings = (painterId?: number, customerId?: number) => {
       const response = await bookingApi.create(bookingData);
       setBookings(prev => [...prev, response.data]);
       return response.data;
-    } catch (err) {
-      setError('Failed to create booking');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Failed to create booking';
+      setError(errorMessage);
       throw err;
     }
   };
@@ -46,8 +48,9 @@ export const useBookings = (painterId?: number, customerId?: number) => {
         booking.id === bookingId ? response.data : booking
       ));
       return response.data;
-    } catch (err) {
-      setError('Failed to update booking status');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Failed to update booking status';
+      setError(errorMessage);
       throw err;
     }
   };
@@ -56,8 +59,9 @@ export const useBookings = (painterId?: number, customerId?: number) => {
     try {
       await bookingApi.delete(bookingId);
       setBookings(prev => prev.filter(booking => booking.id !== bookingId));
-    } catch (err) {
-      setError('Failed to delete booking');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Failed to delete booking';
+      setError(errorMessage);
       throw err;
     }
   };
