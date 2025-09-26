@@ -2,9 +2,8 @@ import { IsNotEmpty, IsString, IsNumber, IsOptional, MaxLength, Min, Max } from 
 
 export class CreatePainterDto {
   @IsNotEmpty()
-  @IsString()
-  @MaxLength(100)
-  name: string;
+  @IsNumber()
+  userId: number;
 
   @IsOptional()
   @IsNumber()

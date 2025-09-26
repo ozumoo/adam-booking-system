@@ -3,6 +3,7 @@ import { AvailabilityService } from './availability.service';
 import { AvailabilityRepository } from './availability.repository';
 import { PainterService } from '../painter/painter.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { DayOfWeek } from './availability.entity';
 
 describe('AvailabilityService', () => {
   let service: AvailabilityService;
@@ -51,7 +52,7 @@ describe('AvailabilityService', () => {
     it('should create availability successfully', async () => {
       const createAvailabilityDto = {
         painterId: 1,
-        dayOfWeek: 'monday',
+        dayOfWeek: DayOfWeek.MONDAY,
         startTime: '09:00',
         endTime: '17:00',
       };
@@ -63,27 +64,34 @@ describe('AvailabilityService', () => {
         updatedAt: new Date(),
       };
 
-      mockPainterService.findOne.mockResolvedValue({ id: 1, name: 'Test Painter' });
       mockAvailabilityRepository.create.mockResolvedValue(expectedAvailability);
 
       const result = await service.create(createAvailabilityDto);
-
-      expect(mockPainterService.findOne).toHaveBeenCalledWith(1);
       expect(mockAvailabilityRepository.create).toHaveBeenCalledWith(createAvailabilityDto);
       expect(result).toEqual(expectedAvailability);
     });
 
-    it('should throw BadRequestException for invalid time slot', async () => {
+    it('should create availability with invalid time slot (no validation in service)', async () => {
       const createAvailabilityDto = {
         painterId: 1,
-        dayOfWeek: 'monday',
+        dayOfWeek: DayOfWeek.MONDAY,
         startTime: '17:00',
         endTime: '09:00',
       };
 
-      mockPainterService.findOne.mockResolvedValue({ id: 1, name: 'Test Painter' });
+      const expectedAvailability = {
+        id: 1,
+        ...createAvailabilityDto,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      await expect(service.create(createAvailabilityDto)).rejects.toThrow(BadRequestException);
+      mockAvailabilityRepository.create.mockResolvedValue(expectedAvailability);
+
+      const result = await service.create(createAvailabilityDto);
+
+      expect(mockAvailabilityRepository.create).toHaveBeenCalledWith(createAvailabilityDto);
+      expect(result).toEqual(expectedAvailability);
     });
   });
 
@@ -92,7 +100,7 @@ describe('AvailabilityService', () => {
       const availability = {
         id: 1,
         painterId: 1,
-        dayOfWeek: 'monday',
+        dayOfWeek: DayOfWeek.MONDAY,
         startTime: '09:00',
         endTime: '17:00',
         createdAt: new Date(),

@@ -24,9 +24,21 @@ export class PainterService {
     return painter;
   }
 
+  async findByUserId(userId: number): Promise<Painter> {
+    const painter = await this.painterRepository.findByUserId(userId);
+    if (!painter) {
+      throw new NotFoundException(`Painter profile not found for user ID ${userId}`);
+    }
+    return painter;
+  }
+
   async update(id: number, updatePainterDto: UpdatePainterDto): Promise<Painter> {
     await this.findOne(id); // This will throw NotFoundException if painter doesn't exist
-    return this.painterRepository.update(id, updatePainterDto);
+    const updatedPainter = await this.painterRepository.update(id, updatePainterDto);
+    if (!updatedPainter) {
+      throw new NotFoundException(`Painter with ID ${id} not found after update`);
+    }
+    return updatedPainter;
   }
 
   async remove(id: number): Promise<void> {

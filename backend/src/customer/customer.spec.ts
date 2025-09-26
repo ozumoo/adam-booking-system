@@ -12,7 +12,7 @@ describe('CustomerService', () => {
   const mockCustomerRepository = {
     findAll: jest.fn(),
     findById: jest.fn(),
-    findByEmail: jest.fn(),
+    findByUserId: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
@@ -40,9 +40,7 @@ describe('CustomerService', () => {
   describe('create', () => {
     it('should create a customer successfully', async () => {
       const createCustomerDto = {
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '+1234567890',
+        userId: 1,
       };
 
       const expectedCustomer = {
@@ -52,21 +50,19 @@ describe('CustomerService', () => {
         updatedAt: new Date(),
       };
 
-      mockCustomerRepository.findByEmail.mockResolvedValue(null);
+      mockCustomerRepository.findByUserId.mockResolvedValue(null);
       mockCustomerRepository.create.mockResolvedValue(expectedCustomer);
 
       const result = await service.create(createCustomerDto);
 
-      expect(mockCustomerRepository.findByEmail).toHaveBeenCalledWith(createCustomerDto.email);
+      expect(mockCustomerRepository.findByUserId).toHaveBeenCalledWith(createCustomerDto.userId);
       expect(mockCustomerRepository.create).toHaveBeenCalledWith(createCustomerDto);
       expect(result).toEqual(expectedCustomer);
     });
 
     it('should throw ConflictException if email already exists', async () => {
       const createCustomerDto = {
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '+1234567890',
+        userId: 1,
       };
 
       const existingCustomer = {
@@ -76,7 +72,7 @@ describe('CustomerService', () => {
         updatedAt: new Date(),
       };
 
-      mockCustomerRepository.findByEmail.mockResolvedValue(existingCustomer);
+      mockCustomerRepository.findByUserId.mockResolvedValue(existingCustomer);
 
       await expect(service.create(createCustomerDto)).rejects.toThrow(ConflictException);
     });

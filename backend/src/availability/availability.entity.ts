@@ -1,15 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Painter } from '../painter/painter.entity';
-
-export enum DayOfWeek {
-  MONDAY = 'monday',
-  TUESDAY = 'tuesday',
-  WEDNESDAY = 'wednesday',
-  THURSDAY = 'thursday',
-  FRIDAY = 'friday',
-  SATURDAY = 'saturday',
-  SUNDAY = 'sunday',
-}
+import { User } from '../user/user.entity';
 
 @Entity('availabilities')
 export class Availability {
@@ -17,19 +7,13 @@ export class Availability {
   id: number;
 
   @Column()
-  painterId: number;
+  painterUserId: number;
 
-  @Column({
-    type: 'enum',
-    enum: DayOfWeek,
-  })
-  dayOfWeek: DayOfWeek;
+  @Column({ type: 'timestamp' })
+  startTime: Date;
 
-  @Column({ type: 'time' })
-  startTime: string;
-
-  @Column({ type: 'time' })
-  endTime: string;
+  @Column({ type: 'timestamp' })
+  endTime: Date;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -37,7 +21,7 @@ export class Availability {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Painter, painter => painter.availabilities)
-  @JoinColumn({ name: 'painterId' })
-  painter: Painter;
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'painterUserId' })
+  painter: User;
 }

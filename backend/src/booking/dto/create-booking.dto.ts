@@ -4,11 +4,11 @@ import { BookingStatus } from '../booking.entity';
 export class CreateBookingDto {
   @IsNotEmpty()
   @IsNumber()
-  painterId: number;
+  painterUserId: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  customerId: number;
+  customerUserId?: number;
 
   @IsNotEmpty()
   @IsDateString()

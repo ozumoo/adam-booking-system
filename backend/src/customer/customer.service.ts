@@ -9,10 +9,10 @@ export class CustomerService {
   constructor(private readonly customerRepository: CustomerRepository) {}
 
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
-    // Check if customer with email already exists
-    const existingCustomer = await this.customerRepository.findByEmail(createCustomerDto.email);
+    // Check if customer profile already exists for this user
+    const existingCustomer = await this.customerRepository.findByUserId(createCustomerDto.userId);
     if (existingCustomer) {
-      throw new ConflictException('Customer with this email already exists');
+      throw new ConflictException('Customer profile already exists for this user');
     }
 
     return this.customerRepository.create(createCustomerDto);
@@ -33,19 +33,23 @@ export class CustomerService {
   async update(id: number, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
     const customer = await this.findOne(id);
 
-    // Check if email is being updated and if it already exists
-    if (updateCustomerDto.email && updateCustomerDto.email !== customer.email) {
-      const existingCustomer = await this.customerRepository.findByEmail(updateCustomerDto.email);
-      if (existingCustomer) {
-        throw new ConflictException('Customer with this email already exists');
-      }
+    const updatedCustomer = await this.customerRepository.update(id, updateCustomerDto);
+    if (!updatedCustomer) {
+      throw new NotFoundException(`Customer with ID ${id} not found`);
     }
-
-    return this.customerRepository.update(id, updateCustomerDto);
+    return updatedCustomer;
   }
 
   async remove(id: number): Promise<void> {
     await this.findOne(id); // This will throw NotFoundException if customer doesn't exist
     await this.customerRepository.delete(id);
+  }
+
+  async findByUserId(userId: number): Promise<Customer> {
+    const customer = await this.customerRepository.findByUserId(userId);
+    if (!customer) {
+      throw new NotFoundException(`Customer profile not found for user ID ${userId}`);
+    }
+    return customer;
   }
 }

@@ -2,23 +2,41 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { AvailabilityRepository } from './availability.repository';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
 import { Availability } from './availability.entity';
-import { PainterService } from '../painter/painter.service';
 
 @Injectable()
 export class AvailabilityService {
   constructor(
     private readonly availabilityRepository: AvailabilityRepository,
-    private readonly painterService: PainterService,
   ) {}
 
-  async create(createAvailabilityDto: CreateAvailabilityDto): Promise<Availability> {
-    // Verify painter exists
-    await this.painterService.findOne(createAvailabilityDto.painterId);
+  async create(createAvailabilityDto: CreateAvailabilityDto): Promise<any> {
+    const { startTime, endTime } = createAvailabilityDto;
+    
+    // Validate datetime format
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new BadRequestException('Invalid date format for startTime or endTime');
+    }
+    
+    if (startDate >= endDate) {
+      throw new BadRequestException('startTime must be before endTime');
+    }
+    
+    const availability = await this.availabilityRepository.create({
+      ...createAvailabilityDto,
+      startTime: startDate,
+      endTime: endDate
+    });
 
-    // Validate time format and logic
-    this.validateTimeSlot(createAvailabilityDto.startTime, createAvailabilityDto.endTime);
-
-    return this.availabilityRepository.create(createAvailabilityDto);
+    // Format response to match task specification
+    return {
+      id: availability.id,
+      painterId: availability.painterUserId,
+      startTime: availability.startTime.toISOString(),
+      endTime: availability.endTime.toISOString()
+    };
   }
 
   async findAll(): Promise<Availability[]> {
@@ -34,42 +52,33 @@ export class AvailabilityService {
   }
 
   async findByPainterId(painterId: number): Promise<Availability[]> {
-    await this.painterService.findOne(painterId); // Verify painter exists
     return this.availabilityRepository.findByPainterId(painterId);
   }
 
+  async findByPainterUserId(painterUserId: number): Promise<any[]> {
+    const availabilities = await this.availabilityRepository.findByPainterUserId(painterUserId);
+    
+    // Format response to match task specification
+    return availabilities.map(availability => ({
+      id: availability.id,
+      startTime: availability.startTime.toISOString(),
+      endTime: availability.endTime.toISOString()
+    }));
+  }
+
+
   async update(id: number, updateData: Partial<Availability>): Promise<Availability> {
     const availability = await this.findOne(id);
-
-    if (updateData.startTime && updateData.endTime) {
-      this.validateTimeSlot(updateData.startTime, updateData.endTime);
-    }
-
-    return this.availabilityRepository.update(id, updateData);
+    Object.assign(availability, updateData);
+    return this.availabilityRepository.save(availability);
   }
 
   async remove(id: number): Promise<void> {
-    await this.findOne(id); // This will throw NotFoundException if availability doesn't exist
-    await this.availabilityRepository.delete(id);
+    const availability = await this.findOne(id);
+    await this.availabilityRepository.remove(availability);
   }
 
   async removeByPainterId(painterId: number): Promise<void> {
-    await this.painterService.findOne(painterId); // Verify painter exists
-    await this.availabilityRepository.deleteByPainterId(painterId);
-  }
-
-  private validateTimeSlot(startTime: string, endTime: string): void {
-    const start = new Date(`2000-01-01T${startTime}`);
-    const end = new Date(`2000-01-01T${endTime}`);
-
-    if (start >= end) {
-      throw new BadRequestException('Start time must be before end time');
-    }
-
-    // Check if time slot is at least 1 hour
-    const diffInHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    if (diffInHours < 1) {
-      throw new BadRequestException('Time slot must be at least 1 hour long');
-    }
+    await this.availabilityRepository.removeByPainterId(painterId);
   }
 }

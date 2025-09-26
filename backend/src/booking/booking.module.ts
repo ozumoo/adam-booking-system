@@ -7,10 +7,12 @@ import { Booking } from './booking.entity';
 import { CustomerModule } from '../customer/customer.module';
 import { PainterModule } from '../painter/painter.module';
 import { AvailabilityModule } from '../availability/availability.module';
+import { Painter } from '../painter/painter.entity';
+import { Availability } from '../availability/availability.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Booking]),
+    TypeOrmModule.forFeature([Booking, Painter, Availability]),
     CustomerModule,
     PainterModule,
     AvailabilityModule,

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Availability, DayOfWeek } from './availability.entity';
+import { Repository, Between } from 'typeorm';
+import { Availability } from './availability.entity';
 
 @Injectable()
 export class AvailabilityRepository {
@@ -25,14 +25,24 @@ export class AvailabilityRepository {
 
   async findByPainterId(painterId: number): Promise<Availability[]> {
     return this.availabilityRepository.find({
-      where: { painterId },
+      where: { painterUserId: painterId },
       relations: ['painter'],
     });
   }
 
-  async findByPainterAndDay(painterId: number, dayOfWeek: DayOfWeek): Promise<Availability[]> {
+  async findByPainterUserId(painterUserId: number): Promise<Availability[]> {
     return this.availabilityRepository.find({
-      where: { painterId, dayOfWeek },
+      where: { painterUserId },
+      relations: ['painter'],
+      order: { startTime: 'ASC' }
+    });
+  }
+
+  async findAvailableInTimeRange(startTime: Date, endTime: Date): Promise<Availability[]> {
+    return this.availabilityRepository.find({
+      where: {
+        startTime: Between(startTime, endTime)
+      },
       relations: ['painter'],
     });
   }
@@ -52,6 +62,19 @@ export class AvailabilityRepository {
   }
 
   async deleteByPainterId(painterId: number): Promise<void> {
-    await this.availabilityRepository.delete({ painterId });
+    await this.availabilityRepository.delete({ painterUserId: painterId });
   }
+
+  async save(availability: Availability): Promise<Availability> {
+    return this.availabilityRepository.save(availability);
+  }
+
+  async remove(availability: Availability): Promise<void> {
+    await this.availabilityRepository.remove(availability);
+  }
+
+  async removeByPainterId(painterId: number): Promise<void> {
+    await this.availabilityRepository.delete({ painterUserId: painterId });
+  }
+
 }

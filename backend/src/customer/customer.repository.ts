@@ -25,7 +25,8 @@ export class CustomerRepository {
 
   async findByEmail(email: string): Promise<Customer | null> {
     return this.customerRepository.findOne({
-      where: { email },
+      where: { user: { email } },
+      relations: ['user'],
     });
   }
 
@@ -41,5 +42,12 @@ export class CustomerRepository {
 
   async delete(id: number): Promise<void> {
     await this.customerRepository.delete(id);
+  }
+
+  async findByUserId(userId: number): Promise<Customer | null> {
+    return this.customerRepository.findOne({
+      where: { userId },
+      relations: ['bookings', 'user'],
+    });
   }
 }

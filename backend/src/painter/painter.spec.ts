@@ -38,7 +38,7 @@ describe('PainterService', () => {
   describe('create', () => {
     it('should create a painter successfully', async () => {
       const createPainterDto = {
-        name: 'John Painter',
+        userId: 1,
         rating: 4.5,
         specialization: 'Interior Painting',
       };

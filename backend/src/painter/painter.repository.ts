@@ -43,4 +43,11 @@ export class PainterRepository {
       relations: ['availabilities', 'bookings'],
     });
   }
+
+  async findByUserId(userId: number): Promise<Painter | null> {
+    return this.painterRepository.findOne({
+      where: { userId },
+      relations: ['availabilities', 'bookings', 'user'],
+    });
+  }
 }

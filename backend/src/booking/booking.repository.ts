@@ -25,14 +25,14 @@ export class BookingRepository {
 
   async findByPainterId(painterId: number): Promise<Booking[]> {
     return this.bookingRepository.find({
-      where: { painterId },
+      where: { painterUserId: painterId },
       relations: ['painter', 'customer'],
     });
   }
 
   async findByCustomerId(customerId: number): Promise<Booking[]> {
     return this.bookingRepository.find({
-      where: { customerId },
+      where: { customerUserId: customerId },
       relations: ['painter', 'customer'],
     });
   }
@@ -47,7 +47,7 @@ export class BookingRepository {
   }
 
   async findConflictingBookings(
-    painterId: number,
+    painterUserId: number,
     date: Date,
     startTime: string,
     endTime: string,
@@ -55,7 +55,7 @@ export class BookingRepository {
   ): Promise<Booking[]> {
     const query = this.bookingRepository
       .createQueryBuilder('booking')
-      .where('booking.painterId = :painterId', { painterId })
+      .where('booking.painterUserId = :painterUserId', { painterUserId })
       .andWhere('booking.date = :date', { date })
       .andWhere('booking.status != :cancelledStatus', { cancelledStatus: BookingStatus.CANCELLED })
       .andWhere(
@@ -87,5 +87,31 @@ export class BookingRepository {
   async updateStatus(id: number, status: BookingStatus): Promise<Booking | null> {
     await this.bookingRepository.update(id, { status });
     return this.findById(id);
+  }
+
+  async save(booking: Booking): Promise<Booking> {
+    return this.bookingRepository.save(booking);
+  }
+
+  async remove(booking: Booking): Promise<void> {
+    await this.bookingRepository.remove(booking);
+  }
+
+  async findOne(id: number): Promise<Booking | null> {
+    return this.findById(id);
+  }
+
+  async findByCustomerUserId(customerUserId: number): Promise<Booking[]> {
+    return this.bookingRepository.find({
+      where: { customerUserId },
+      relations: ['painter', 'customer'],
+    });
+  }
+
+  async findByPainterUserId(painterUserId: number): Promise<Booking[]> {
+    return this.bookingRepository.find({
+      where: { painterUserId },
+      relations: ['painter', 'customer'],
+    });
   }
 }

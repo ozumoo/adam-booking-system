@@ -1,14 +1,9 @@
-import { IsNotEmpty, IsEnum, IsString, IsNumber } from 'class-validator';
-import { DayOfWeek } from '../availability.entity';
+import { IsNotEmpty, IsString, IsNumber, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateAvailabilityDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  painterId: number;
-
-  @IsNotEmpty()
-  @IsEnum(DayOfWeek)
-  dayOfWeek: DayOfWeek;
+  painterUserId?: number;
 
   @IsNotEmpty()
   @IsString()

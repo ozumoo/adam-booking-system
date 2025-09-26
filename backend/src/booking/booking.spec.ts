@@ -16,6 +16,7 @@ describe('BookingService', () => {
   const mockBookingRepository = {
     findAll: jest.fn(),
     findById: jest.fn(),
+    findOne: jest.fn(),
     findByPainterId: jest.fn(),
     findByCustomerId: jest.fn(),
     findConflictingBookings: jest.fn(),
@@ -27,14 +28,17 @@ describe('BookingService', () => {
 
   const mockCustomerService = {
     findOne: jest.fn(),
+    findByUserId: jest.fn(),
   };
 
   const mockPainterService = {
     findOne: jest.fn(),
+    findByUserId: jest.fn(),
   };
 
   const mockAvailabilityService = {
     findByPainterId: jest.fn(),
+    findByPainterUserIdAndDay: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -74,8 +78,8 @@ describe('BookingService', () => {
   describe('create', () => {
     it('should create booking successfully', async () => {
       const createBookingDto = {
-        painterId: 1,
-        customerId: 1,
+        painterUserId: 1,
+        customerUserId: 1,
         date: '2024-01-15',
         startTime: '09:00',
         endTime: '12:00',
@@ -91,32 +95,35 @@ describe('BookingService', () => {
 
       const mockAvailability = {
         id: 1,
-        painterId: 1,
+        painterUserId: 1,
         dayOfWeek: 'monday',
         startTime: '08:00',
         endTime: '17:00',
       };
 
-      mockCustomerService.findOne.mockResolvedValue({ id: 1, name: 'Test Customer' });
-      mockPainterService.findOne.mockResolvedValue({ id: 1, name: 'Test Painter' });
-      mockAvailabilityService.findByPainterId.mockResolvedValue([mockAvailability]);
-      mockBookingRepository.findConflictingBookings.mockResolvedValue([]);
+      mockCustomerService.findByUserId.mockResolvedValue({ id: 1, name: 'Test Customer' });
+      mockPainterService.findByUserId.mockResolvedValue({ id: 1, name: 'Test Painter' });
+      mockAvailabilityService.findByPainterUserIdAndDay.mockResolvedValue(mockAvailability);
+      mockBookingRepository.findAll.mockResolvedValue([]);
       mockBookingRepository.create.mockResolvedValue(expectedBooking);
 
       const result = await service.create(createBookingDto);
 
-      expect(mockCustomerService.findOne).toHaveBeenCalledWith(1);
-      expect(mockPainterService.findOne).toHaveBeenCalledWith(1);
-      expect(mockAvailabilityService.findByPainterId).toHaveBeenCalledWith(1);
-      expect(mockBookingRepository.findConflictingBookings).toHaveBeenCalled();
-      expect(mockBookingRepository.create).toHaveBeenCalledWith(createBookingDto);
+      expect(mockCustomerService.findByUserId).toHaveBeenCalledWith(1);
+      expect(mockPainterService.findByUserId).toHaveBeenCalledWith(1);
+      expect(mockAvailabilityService.findByPainterUserIdAndDay).toHaveBeenCalledWith(1, 'monday');
+      expect(mockBookingRepository.findAll).toHaveBeenCalled();
+      expect(mockBookingRepository.create).toHaveBeenCalledWith({
+        ...createBookingDto,
+        date: new Date(createBookingDto.date),
+      });
       expect(result).toEqual(expectedBooking);
     });
 
     it('should throw ConflictException for conflicting bookings', async () => {
       const createBookingDto = {
-        painterId: 1,
-        customerId: 1,
+        painterUserId: 1,
+        customerUserId: 1,
         date: '2024-01-15',
         startTime: '09:00',
         endTime: '12:00',
@@ -124,25 +131,25 @@ describe('BookingService', () => {
 
       const conflictingBooking = {
         id: 1,
-        painterId: 1,
-        customerId: 2,
-        date: '2024-01-15',
+        painterUserId: 1,
+        customerUserId: 2,
+        date: new Date('2024-01-15'),
         startTime: '10:00',
         endTime: '14:00',
       };
 
       const mockAvailability = {
         id: 1,
-        painterId: 1,
+        painterUserId: 1,
         dayOfWeek: 'monday',
         startTime: '08:00',
         endTime: '17:00',
       };
 
-      mockCustomerService.findOne.mockResolvedValue({ id: 1, name: 'Test Customer' });
-      mockPainterService.findOne.mockResolvedValue({ id: 1, name: 'Test Painter' });
-      mockAvailabilityService.findByPainterId.mockResolvedValue([mockAvailability]);
-      mockBookingRepository.findConflictingBookings.mockResolvedValue([conflictingBooking]);
+      mockCustomerService.findByUserId.mockResolvedValue({ id: 1, name: 'Test Customer' });
+      mockPainterService.findByUserId.mockResolvedValue({ id: 1, name: 'Test Painter' });
+      mockAvailabilityService.findByPainterUserIdAndDay.mockResolvedValue(mockAvailability);
+      mockBookingRepository.findAll.mockResolvedValue([conflictingBooking]);
 
       await expect(service.create(createBookingDto)).rejects.toThrow(ConflictException);
     });
@@ -152,8 +159,8 @@ describe('BookingService', () => {
     it('should return booking if found', async () => {
       const booking = {
         id: 1,
-        painterId: 1,
-        customerId: 1,
+        painterUserId: 1,
+        customerUserId: 1,
         date: '2024-01-15',
         startTime: '09:00',
         endTime: '12:00',
@@ -162,16 +169,16 @@ describe('BookingService', () => {
         updatedAt: new Date(),
       };
 
-      mockBookingRepository.findById.mockResolvedValue(booking);
+      mockBookingRepository.findOne.mockResolvedValue(booking);
 
       const result = await service.findOne(1);
 
-      expect(mockBookingRepository.findById).toHaveBeenCalledWith(1);
+      expect(mockBookingRepository.findOne).toHaveBeenCalledWith(1);
       expect(result).toEqual(booking);
     });
 
     it('should throw NotFoundException if booking not found', async () => {
-      mockBookingRepository.findById.mockResolvedValue(null);
+      mockBookingRepository.findOne.mockResolvedValue(null);
 
       await expect(service.findOne(1)).rejects.toThrow(NotFoundException);
     });

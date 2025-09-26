@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Customer } from '../customer/customer.entity';
-import { Painter } from '../painter/painter.entity';
+import { User } from '../user/user.entity';
 
 export enum BookingStatus {
   PENDING = 'pending',
@@ -15,10 +14,10 @@ export class Booking {
   id: number;
 
   @Column()
-  painterId: number;
+  painterUserId: number;
 
   @Column()
-  customerId: number;
+  customerUserId: number;
 
   @Column({ type: 'date' })
   date: Date;
@@ -42,11 +41,11 @@ export class Booking {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Painter, painter => painter.bookings)
-  @JoinColumn({ name: 'painterId' })
-  painter: Painter;
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'painterUserId' })
+  painter: User;
 
-  @ManyToOne(() => Customer, customer => customer.bookings)
-  @JoinColumn({ name: 'customerId' })
-  customer: Customer;
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'customerUserId' })
+  customer: User;
 }
